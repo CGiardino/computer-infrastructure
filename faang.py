@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+# FAANG Stock Data Fetcher and Plotter function
 
 # Importing libraries
+
 # Dates and times
 import datetime as dt
 # Data frames
@@ -35,54 +37,63 @@ def get_data():
     print(f"Data saved to {filepath}")
     print (data.head())
 
+
+# Function to plot data from the latest CSV file
 def plot_data():
-    # Find the latest CSV in data/ using glob
+    # Find the latest CSV in the data folder using glob
     # https://docs.python.org/3/library/glob.html
     csv_files = glob.glob('data/*.csv')
     if not csv_files:
         # If no csv file exists, return
         print("No CSV files found in data/")
         return
+
     # Get the latest CSV file using os.path.getctime
     # https://www.geeksforgeeks.org/python/python-os-path-getctime-method/
     latest_csv = max(csv_files, key=os.path.getctime)
 
-    # Load CSV with multi-index columns
+    # Load the latest CSV into a DataFrame
     # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html
     df = pd.read_csv(latest_csv, header=[0, 1], index_col=0, parse_dates=True)
 
-    # Plot Close prices for all available tickers
-    plt.figure(figsize=(12, 6))
+    # Extract DataFrame with all Close prices for each FAANG ticker
+    close_prices_df = df['Close']
 
-    # Get all tickers in the second level of the multi-index columns
-    # We need it for ticker in df.columns.levels[1]: because our CSV uses a MultiIndex for columns:
-    # 1. The first level is the price type (Close, High, etc.)
-    # 2. The second level is the ticker symbol (AAPL, AMZN, etc.)
-    # df.columns.levels[1] gives all unique ticker symbols. So we can loop for each ticker symbol
-    # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.MultiIndex.levels.html
-    # I also had some help from ChatGPT to get tickers under the "Close" price type
-    # https://chatgpt.com/share/68ffd5b2-6fe4-800f-82bb-25299b654018
-    tickers_close = [ticker for price_type, ticker in df.columns if price_type == "Close"]
-    # Loop through each ticker and plot its Close price
-    for ticker in tickers_close:
-        # Plot Close price for each ticker
-        # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.plot.html
-        plt.plot(df.index, df[("Close", ticker)], label=ticker)
-    # Add axis labels, legend, and title
-    plt.xlabel("Time")
-    plt.ylabel("Close Price")
-    plt.legend()
-    plt.title(f"FAANG Close Prices - {os.path.basename(latest_csv).split(".")[0]}")
+    # Plot Close prices for all available tickers using pandas built-in plotting
+    # https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html#plotting-with-matplotlib
+    ax = close_prices_df.plot(figsize=(12, 6), grid=True, title="FAANG Close Prices")
 
-    # Save plot
+    # Add axis labels on the x-axis with a bit of padding
+    # https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_xlabel.html
+    ax.set_xlabel("Date (YYYY-MM-DD)", labelpad=10)
+
+    # Add axis labels on the y-axis
+    # https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_ylabel.html
+    ax.set_ylabel("Close Price (USD)")
+
+    # Add a legend with ticker names 
+    # https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.legend.html
+    # Note adding the legend outside the plot area to the right in the center of the plot
+    ax.legend(title="Ticker", loc="center left", bbox_to_anchor=(1, 0.5))
+
+    # Create the plots folder if it doesn't exist'
+    # https://docs.python.org/3/library/os.html
     os.makedirs("plots", exist_ok=True)
+
     # Format the filename with date and time
     # https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
     out_path = f"plots/{dt.datetime.now().strftime('%Y%m%d-%H%M%S')}.png"
-    # Save plot
+
+    # Save the plot as a PNG file
     # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.savefig.html
+    # Note: plt keeps track of the current figure globally 
     plt.savefig(out_path)
-    # Close plot to free up memory
+
+    # Display the plot
+    # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.show.html
+    plt.show()
+
+    # Close the plot to free up memory
     # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.close.html
     plt.close()
 
