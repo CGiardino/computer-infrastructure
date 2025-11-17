@@ -59,9 +59,12 @@ def plot_data():
     # Extract DataFrame with all Close prices for each FAANG ticker
     close_prices_df = df['Close']
 
+    # Create a new figure and axis
+    fix, ax = plt.subplots()
+
     # Plot Close prices for all available tickers using pandas built-in plotting
     # https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html#plotting-with-matplotlib
-    ax = close_prices_df.plot(figsize=(12, 6), grid=True, title="FAANG Close Prices")
+    close_prices_df.plot(figsize=(12, 6), grid=True, title="FAANG Close Prices", ax=ax)
 
     # Add axis labels on the x-axis with a bit of padding
     # https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_xlabel.html
@@ -84,10 +87,9 @@ def plot_data():
     # https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
     out_path = f"plots/{dt.datetime.now().strftime('%Y%m%d-%H%M%S')}.png"
 
-    # Save the plot as a PNG file
+    # Save the plot as a PNG file with dpi 300 for better quality
     # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.savefig.html
-    # Note: plt keeps track of the current figure globally 
-    plt.savefig(out_path)
+    plt.savefig(out_path=out_path, dpi=300)
 
     # Display the plot
     # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.show.html
