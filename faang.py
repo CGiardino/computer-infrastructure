@@ -11,10 +11,12 @@ import pandas as pd
 import os
 #  Yahoo Finance yfinance module to fetch stock data
 import yfinance as yf
-# For finding files using patterns
-import glob
+
 # Matplotlib for plotting
 import matplotlib.pyplot as plt
+
+# Matplotlib date formatting
+import matplotlib.dates as mdates
 
 def get_data():
     # FAANG tickers
@@ -40,31 +42,46 @@ def get_data():
 
 # Function to plot data from the latest CSV file
 def plot_data():
-    # Find the latest CSV in the data folder using glob
-    # https://docs.python.org/3/library/glob.html
-    csv_files = glob.glob('data/*.csv')
-    if not csv_files:
+    # Get the list of files in the data folder
+    # https://docs.python.org/3/library/os.html#os.listdir
+    list_data_files = os.listdir("data")
+    if not list_data_files:
         # If no csv file exists, return
         print("No CSV files found in data/")
         return
-
-    # Get the latest CSV file using os.path.getctime
-    # https://www.geeksforgeeks.org/python/python-os-path-getctime-method/
-    latest_csv = max(csv_files, key=os.path.getctime)
+    # Sort the list of files in reverse order (most recent first)
+    # https://docs.python.org/3/tutorial/datastructures.html#sorting-lists
+    list_data_files.sort(reverse=True)
+    # Get the last data file path
+    latest_data_file_path = os.path.join("data", list_data_files[0])
 
     # Load the latest CSV into a DataFrame
+    # The headers are the first two rows of the CSV file (i.e. the ticker symbols and the price types)
+    # The index is the date/time column, and the columns are the ticker symbols
     # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html
-    df = pd.read_csv(latest_csv, header=[0, 1], index_col=0, parse_dates=True)
+    df = pd.read_csv(latest_data_file_path, header=[0, 1], index_col=0)
+
+    # Explicitly convert the index to datetime
+    # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
+    df.index = pd.to_datetime(df.index)
 
     # Extract DataFrame with all Close prices for each FAANG ticker
     close_prices_df = df['Close']
 
     # Create a new figure and axis
+    # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplots.html
     fix, ax = plt.subplots()
 
     # Plot Close prices for all available tickers using pandas built-in plotting
     # https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html#plotting-with-matplotlib
     close_prices_df.plot(figsize=(12, 6), grid=True, title="FAANG Close Prices", ax=ax)
+
+    # Set major ticks to daily intervals
+    # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.xticks.html
+    ax.xaxis.set_major_locator(mdates.DayLocator())
+    # Set x-axis date format to YYYY-MM-DD
+    # https://matplotlib.org/stable/api/dates_api.html#matplotlib.dates.DateFormatter
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
 
     # Add axis labels on the x-axis with a bit of padding
     # https://matplotlib.org/stable/api/_as_gen/matplotlib.axes.Axes.set_xlabel.html
@@ -83,13 +100,17 @@ def plot_data():
     # https://docs.python.org/3/library/os.html
     os.makedirs("plots", exist_ok=True)
 
-    # Format the filename with date and time
-    # https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
-    out_path = f"plots/{dt.datetime.now().strftime('%Y%m%d-%H%M%S')}.png"
+    # Extract the filename without extension from the latest data file path
+    # https://docs.python.org/3/library/os.path.html#os.path.splitext
+    filename = os.path.splitext(os.path.basename(latest_data_file_path))[0]
+
+    # Format the filename to use png extension
+    out_path = f"plots/{filename}.png"
 
     # Save the plot as a PNG file with dpi 300 for better quality
+    # If the file already exists, it will be overwritten
     # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.savefig.html
-    plt.savefig(out_path=out_path, dpi=300)
+    plt.savefig(fname=out_path, dpi=300)
 
     # Display the plot
     # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.show.html
