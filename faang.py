@@ -58,12 +58,9 @@ def plot_data():
     # Load the latest CSV into a DataFrame
     # The headers are the first two rows of the CSV file (i.e. the ticker symbols and the price types)
     # The index is the date/time column, and the columns are the ticker symbols
+    # Setting parse_dates=True will convert the date/time column to a datetime object
     # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.read_csv.html
-    df = pd.read_csv(latest_data_file_path, header=[0, 1], index_col=0)
-
-    # Explicitly convert the index to datetime
-    # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.to_datetime.html
-    df.index = pd.to_datetime(df.index)
+    df = pd.read_csv(latest_data_file_path, header=[0, 1], index_col=0, parse_dates=True)
 
     # Extract DataFrame with all Close prices for each FAANG ticker
     close_prices_df = df['Close']
