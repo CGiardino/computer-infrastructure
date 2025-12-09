@@ -1,0 +1,61 @@
+# This GitHub Actions workflow runs the faang.py script every Saturday and commits any changes back to the repository.
+# Adapted from the provided instructions in ChatGPT https://chatgpt.com/s/t_6938746270388191bb3014644053fd68 
+name: Run faang.py weekly
+
+on:
+  schedule:
+    # Every Saturday at 08:00 UTC
+    - cron: "0 8 * * 6"
+  workflow_dispatch: {} # Allows manual runs from the Actions tab
+
+permissions:
+  contents: write   # Needed so the GITHUB_TOKEN can push commits
+
+jobs:
+  run-faang:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Clone (checkout) the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Install dependencies if faang.py needs any
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 3. Run faang.py
+      - name: Run faang.py
+        run: python faang.py
+
+      # 4. Commit and push changes (if any)
+      - name: Commit and push changes
+        run: |
+          # Configure git identity for the commit
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Add all changes
+          git add -A
+
+          # If there are no changes, exit gracefully
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          # Commit and push
+          # skip ci to avoid triggering another workflow run
+          git commit -m "Update data from faang.py [skip ci]"
+          git push
+        env:
+          # GITHUB_TOKEN is automatically provided by GitHub Actions
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
